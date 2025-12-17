@@ -64,16 +64,6 @@ npm run dev
 
 6. Open [http://localhost:3000](http://localhost:3000)
 
-## Demo Flow (60 seconds)
-
-1. **Start Session**: Enter witness name and case name
-2. **Upload Documents**: Drop case materials the witness will be questioned about
-3. **Generate Questions**: AI analyzes documents and generates 20 likely cross-examination questions
-4. **Review Questions**: See questions categorized by type (timeline, credibility, impeachment, etc.)
-5. **Practice Mode**: Answer questions as the witness would
-6. **Get Feedback**: AI examiner provides follow-up questions and coaching
-7. **Complete Session**: Review practice history and session statistics
-
 ## Question Categories
 
 | Category | Description |
