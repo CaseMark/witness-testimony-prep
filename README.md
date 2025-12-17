@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎯 Testimony Prep Tool
+
+A powerful witness preparation tool that helps attorneys prepare witnesses for cross-examination using AI-generated questions and interactive practice sessions.
+
+## Features
+
+- **📄 Document Upload**: Upload case materials (depositions, exhibits, witness statements) that the witness will be questioned about
+- **🤖 AI Question Generation**: Automatically generate 20 likely cross-examination questions based on uploaded documents
+- **🎭 Practice Mode**: Interactive Q&A practice with an AI examiner that provides realistic follow-up questions
+- **💡 Response Coaching**: Get feedback on witness responses with suggestions for improvement
+- **⚠️ Weak Point Identification**: Highlights areas where testimony might be vulnerable
+- **⏱️ Session Timer**: Track practice session duration
+- **🎙️ Recording Support**: Optional session recording for attorney review (Voice API integration)
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **APIs**: Case.dev (Vaults, LLMs, Voice)
+
+## Case.dev APIs Used
+
+| API | Purpose |
+|-----|---------|
+| **Vaults** | Secure document storage with OCR and semantic search |
+| **LLMs** | Question generation and AI examiner responses |
+| **Voice** | Session recording and transcription (optional) |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+
+- npm or pnpm
+- Case.dev API key ([Get one here](https://app.case.dev))
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd testimony-prep
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Add your Case.dev API key to `.env.local`:
+```
+CASEDEV_API_KEY=sk_case_your_api_key_here
+```
 
-## Learn More
+5. Start the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. Open [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Demo Flow (60 seconds)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Start Session**: Enter witness name and case name
+2. **Upload Documents**: Drop case materials the witness will be questioned about
+3. **Generate Questions**: AI analyzes documents and generates 20 likely cross-examination questions
+4. **Review Questions**: See questions categorized by type (timeline, credibility, impeachment, etc.)
+5. **Practice Mode**: Answer questions as the witness would
+6. **Get Feedback**: AI examiner provides follow-up questions and coaching
+7. **Complete Session**: Review practice history and session statistics
 
-## Deploy on Vercel
+## Question Categories
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Category | Description |
+|----------|-------------|
+| **Timeline** | Questions about sequence and timing of events |
+| **Credibility** | Questions challenging witness reliability |
+| **Inconsistency** | Questions highlighting contradictions |
+| **Foundation** | Questions establishing basis for knowledge |
+| **Impeachment** | Questions using prior statements or conduct |
+| **General** | Standard cross-examination questions |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+```
+testimony-prep/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── sessions/
+│   │   │       ├── route.ts              # Create/list sessions
+│   │   │       └── [sessionId]/
+│   │   │           ├── route.ts          # Get/update/delete session
+│   │   │           ├── documents/
+│   │   │           │   └── route.ts      # Upload documents
+│   │   │           ├── generate-questions/
+│   │   │           │   └── route.ts      # Generate cross-exam questions
+│   │   │           └── practice/
+│   │   │               └── route.ts      # Practice mode API
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx                      # Main UI component
+│   └── lib/
+│       ├── case-api.ts                   # Case.dev API client
+│       ├── session-store.ts              # In-memory session storage
+│       └── types.ts                      # TypeScript types
+├── .env.example
+├── package.json
+└── README.md
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/sessions` | Create a new prep session |
+| GET | `/api/sessions` | List all sessions |
+| GET | `/api/sessions/:id` | Get session details |
+| PATCH | `/api/sessions/:id` | Update session |
+| DELETE | `/api/sessions/:id` | Delete session |
+| POST | `/api/sessions/:id/documents` | Upload document |
+| GET | `/api/sessions/:id/documents` | List documents |
+| POST | `/api/sessions/:id/generate-questions` | Generate cross-exam questions |
+| POST | `/api/sessions/:id/practice` | Submit practice response |
+| GET | `/api/sessions/:id/practice` | Get practice history |
+
+## Future Enhancements
+
+- [ ] Video practice with body language analysis
+- [ ] Attorney feedback loop and annotations
+- [ ] Multi-witness case preparation
+- [ ] Export practice sessions as PDF reports
+- [ ] Integration with case management systems
+- [ ] Real-time voice practice with speech-to-text
+
+## License
+
+MIT
+
+## Support
+
+For questions about Case.dev APIs, visit [docs.case.dev](https://docs.case.dev)
