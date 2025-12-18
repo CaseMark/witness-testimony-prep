@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { jsPDF } from 'jspdf';
 import { 
   Users, 
   Upload, 
@@ -360,6 +361,152 @@ export default function DepositionPrepTool() {
 
   // Get unique topics
   const uniqueTopics = [...new Set(session?.questions.map(q => q.topic) || [])];
+
+  // Export to PDF function
+  const exportToPDF = useCallback(() => {
+    if (!session) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - (margin * 2);
+    let yPosition = margin;
+
+    // Helper function to add text with word wrap
+    const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 10): number => {
+      doc.setFontSize(fontSize);
+      const lines = doc.splitTextToSize(text, maxWidth);
+      doc.text(lines, x, y);
+      return y + (lines.length * fontSize * 0.4);
+    };
+
+    // Helper function to check if we need a new page
+    const checkNewPage = (requiredSpace: number): void => {
+      if (yPosition + requiredSpace > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+      }
+    };
+
+    // Title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DEPOSITION OUTLINE', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 12;
+
+    // Case info
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Case: ${session.caseName}`, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 6;
+    doc.text(`Deponent: ${session.deponentName}`, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 6;
+    if (session.caseNumber) {
+      doc.text(`Case No: ${session.caseNumber}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 6;
+    }
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+
+    // Horizontal line
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 10;
+
+    // Questions - either from outline or all questions
+    const questionsToExport = session.outline?.sections 
+      ? session.outline.sections.flatMap((section, sectionIndex) => 
+          section.questions.map((q, qIndex) => ({ ...q, sectionTitle: section.title, sectionIndex, questionIndex: qIndex }))
+        )
+      : session.questions.map((q, index) => ({ ...q, sectionTitle: q.topic, sectionIndex: 0, questionIndex: index }));
+
+    let currentSection = '';
+    let questionNumber = 1;
+
+    questionsToExport.forEach((question) => {
+      // Check if we need a new section header
+      if (question.sectionTitle !== currentSection) {
+        checkNewPage(25);
+        currentSection = question.sectionTitle;
+        
+        // Section header
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setFillColor(245, 245, 245);
+        doc.rect(margin, yPosition - 5, contentWidth, 10, 'F');
+        doc.text(currentSection.toUpperCase(), margin + 5, yPosition + 2);
+        yPosition += 15;
+        questionNumber = 1;
+      }
+
+      // Question
+      checkNewPage(40);
+      
+      // Question number and priority indicator
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      const priorityIndicator = question.priority === 'high' ? '★' : question.priority === 'medium' ? '●' : '○';
+      doc.text(`Q${questionNumber}. ${priorityIndicator}`, margin, yPosition);
+      
+      // Question text
+      doc.setFont('helvetica', 'normal');
+      yPosition = addWrappedText(question.question, margin + 15, yPosition, contentWidth - 15, 11);
+      yPosition += 3;
+
+      // Metadata line
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      let metaText = `[${question.category.replace('_', ' ').toUpperCase()}]`;
+      if (question.documentReference) {
+        metaText += ` | Doc: ${question.documentReference}`;
+      }
+      if (question.pageReference) {
+        metaText += ` | Page: ${question.pageReference}`;
+      }
+      if (question.exhibitToShow) {
+        metaText += ` | Show Exhibit: ${question.exhibitToShow}`;
+      }
+      doc.text(metaText, margin + 15, yPosition);
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+
+      // Follow-up questions
+      if (question.followUpQuestions && question.followUpQuestions.length > 0) {
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
+        doc.text('Follow-ups:', margin + 15, yPosition);
+        yPosition += 4;
+        question.followUpQuestions.forEach((fq, i) => {
+          checkNewPage(10);
+          yPosition = addWrappedText(`→ ${fq}`, margin + 20, yPosition, contentWidth - 25, 9);
+          yPosition += 2;
+        });
+        doc.setTextColor(0, 0, 0);
+      }
+
+      yPosition += 8;
+      questionNumber++;
+    });
+
+    // Add footer with page numbers
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        `Page ${i} of ${totalPages} | ${session.caseName} - Deposition of ${session.deponentName}`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+    }
+
+    // Save the PDF
+    const fileName = `Deposition_Outline_${session.deponentName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  }, [session]);
 
   // Error banner component
   const ErrorBanner = () => {
@@ -979,13 +1126,10 @@ export default function DepositionPrepTool() {
           </button>
           <button
             className="py-2 px-4 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition flex items-center gap-2"
-            onClick={() => {
-              // In production, this would export to Word
-              alert('Export to Word functionality would be implemented here with document citations.');
-            }}
+            onClick={exportToPDF}
           >
             <Download className="w-5 h-5" />
-            Export to Word
+            Export to PDF
           </button>
         </div>
       </div>
@@ -1067,8 +1211,8 @@ export default function DepositionPrepTool() {
           <div>
             <p className="font-medium text-orange-900">Ready for the deposition?</p>
             <p className="text-sm text-orange-800 mt-1">
-              Export your outline to Word with document citations. Each question will include
-              references to the source documents and page numbers for easy reference during the deposition.
+              Export your outline to PDF with document citations. Each question will include
+              references to the source documents, priority indicators, and follow-up questions for easy reference during the deposition.
             </p>
           </div>
         </div>
