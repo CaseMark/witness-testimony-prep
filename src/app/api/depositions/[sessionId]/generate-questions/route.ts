@@ -10,7 +10,9 @@ interface RouteParams {
 const DEPOSITION_ANALYSIS_PROMPT = `You are an experienced litigation attorney preparing to take a deposition. Your task is to analyze the provided case documents and generate strategic deposition questions that are SPECIFIC to the document contents.
 
 CRITICAL REQUIREMENTS:
+- ALL questions MUST be directed TO THE DEPONENT (the witness being deposed). Address them directly using "you" and "your"
 - ALL questions MUST reference specific facts, statements, dates, names, or details from the uploaded documents
+- When other people are mentioned in documents, ask the DEPONENT about their knowledge of or interactions with those people
 - DO NOT include generic introductory questions like "state your name for the record" or "have you given a deposition before"
 - DO NOT include document authentication questions like "do you recognize this document"
 - DO NOT include generic closing questions like "is there anything else you'd like to add"
@@ -269,21 +271,21 @@ function generateFallbackQuestions(caseName: string, deponentName: string, docum
     }
   });
 
-  // Questions about specific people mentioned
+  // Questions about specific people mentioned - directed TO the deponent
   details.names.forEach((name, index) => {
     if (index < 3 && name !== deponentName) {
       questions.push({
         id: uuidv4(),
-        question: `${name} is mentioned in the documents. Describe your interactions with ${name} related to this matter.`,
+        question: `${deponentName}, the documents mention ${name}. Please describe your relationship with ${name} and any interactions you had with them regarding this matter.`,
         topic: 'Witness Relationships',
         category: 'foundation',
         priority: index === 0 ? 'high' : 'medium',
         documentReference: docNames[0],
-        rationale: `${name} appears to be a key individual in the documents and understanding their role is essential.`,
+        rationale: `${name} appears to be a key individual in the documents and understanding the deponent's interactions with them is essential.`,
         followUpQuestions: [
           `When did you last communicate with ${name}?`,
-          `Did ${name} ever express concerns about this matter?`,
-          `Are there any communications with ${name} that weren't produced?`
+          `What did ${name} tell you about this matter?`,
+          `Did you ever have any disagreements with ${name} about this?`
         ],
       });
     }
@@ -481,7 +483,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .join('\n\n');
     
     const userPrompt = `Case: ${session.caseName}
-Deponent: ${session.deponentName}
+Deponent (Witness Name): ${session.deponentName}
 ${session.caseNumber ? `Case Number: ${session.caseNumber}` : ''}
 
 DOCUMENTS TO ANALYZE:
@@ -490,6 +492,8 @@ ${documentContext}
 Based on these documents, perform a comprehensive analysis and generate 15-20 strategic deposition questions.
 
 CRITICAL REQUIREMENTS:
+- ALL questions MUST be directed TO ${session.deponentName} (the deponent/witness). Use "you" and "your" to address them directly.
+- When other people are mentioned in documents, ask ${session.deponentName} about their knowledge of or interactions with those people - do NOT ask questions about those other people as if they were the witness.
 - Every question MUST reference specific facts, dates, names, quotes, or details from the documents above
 - DO NOT include generic questions like "state your name" or "do you recognize this document"
 - DO NOT include procedural questions about deposition experience
