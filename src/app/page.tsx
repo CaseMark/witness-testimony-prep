@@ -22,36 +22,54 @@ export default function HybridWitnessPrepPage() {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-gray-900">Witness Prep Suite</h1>
-                <p className="text-xs text-gray-500">Powered by Case.dev</p>
+                <p className="text-xs text-gray-500">Testimony & Deposition Preparation</p>
               </div>
             </div>
             
-            {/* Toggle Switch */}
-            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setActiveMode('testimony')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  activeMode === 'testimony'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Scale className="w-4 h-4" />
-                <span className="hidden sm:inline">Testimony Prep</span>
-                <span className="sm:hidden">Testimony</span>
-              </button>
-              <button
-                onClick={() => setActiveMode('deposition')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  activeMode === 'deposition'
-                    ? 'bg-white text-orange-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Deposition Prep</span>
-                <span className="sm:hidden">Deposition</span>
-              </button>
+            {/* Toggle Switch and Built With */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveMode('testimony')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    activeMode === 'testimony'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Scale className="w-4 h-4" />
+                  <span className="hidden sm:inline">Testimony Prep</span>
+                  <span className="sm:hidden">Testimony</span>
+                </button>
+                <button
+                  onClick={() => setActiveMode('deposition')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    activeMode === 'deposition'
+                      ? 'bg-white text-orange-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Deposition Prep</span>
+                  <span className="sm:hidden">Deposition</span>
+                </button>
+              </div>
+              <div className="hidden md:flex items-center gap-1.5 text-sm text-gray-500 border-l border-gray-200 pl-4">
+                <span>Built with</span>
+                <a 
+                  href="https://case.dev" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 hover:text-gray-700 transition-colors"
+                >
+                  <img 
+                    src="/casedev-logo.svg" 
+                    alt="Case.dev" 
+                    className="h-5 w-5"
+                  />
+                  <span className="font-medium">case.dev</span>
+                </a>
+              </div>
             </div>
           </div>
           

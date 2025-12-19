@@ -443,15 +443,15 @@ export default function DepositionPrepTool() {
       // Question
       checkNewPage(40);
       
-      // Question number and priority indicator
+      // Question number and priority indicator (using ASCII-safe characters)
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      const priorityIndicator = question.priority === 'high' ? '★' : question.priority === 'medium' ? '●' : '○';
+      const priorityIndicator = question.priority === 'high' ? '[HIGH]' : question.priority === 'medium' ? '[MED]' : '[LOW]';
       doc.text(`Q${questionNumber}. ${priorityIndicator}`, margin, yPosition);
       
       // Question text
       doc.setFont('helvetica', 'normal');
-      yPosition = addWrappedText(question.question, margin + 15, yPosition, contentWidth - 15, 11);
+      yPosition = addWrappedText(question.question, margin + 5, yPosition + 5, contentWidth - 5, 11);
       yPosition += 3;
 
       // Metadata line
@@ -467,7 +467,7 @@ export default function DepositionPrepTool() {
       if (question.exhibitToShow) {
         metaText += ` | Show Exhibit: ${question.exhibitToShow}`;
       }
-      doc.text(metaText, margin + 15, yPosition);
+      doc.text(metaText, margin + 5, yPosition);
       doc.setTextColor(0, 0, 0);
       yPosition += 5;
 
@@ -475,12 +475,12 @@ export default function DepositionPrepTool() {
       if (question.followUpQuestions && question.followUpQuestions.length > 0) {
         doc.setFontSize(9);
         doc.setTextColor(80, 80, 80);
-        doc.text('Follow-ups:', margin + 15, yPosition);
-        yPosition += 4;
-        question.followUpQuestions.forEach((fq, i) => {
+        doc.text('Follow-ups:', margin + 5, yPosition);
+        yPosition += 5;
+        question.followUpQuestions.forEach((fq) => {
           checkNewPage(10);
-          yPosition = addWrappedText(`→ ${fq}`, margin + 20, yPosition, contentWidth - 25, 9);
-          yPosition += 2;
+          yPosition = addWrappedText(`- ${fq}`, margin + 10, yPosition, contentWidth - 15, 9);
+          yPosition += 3;
         });
         doc.setTextColor(0, 0, 0);
       }

@@ -7,12 +7,38 @@ interface RouteParams {
   params: Promise<{ sessionId: string }>;
 }
 
-const DEPOSITION_ANALYSIS_PROMPT = `You are an experienced litigation attorney preparing to take a deposition. Your task is to analyze the provided case documents and generate strategic deposition questions that are SPECIFIC to the document contents.
+// Dynamic system prompt that includes the actual deponent name
+function getDepositionAnalysisPrompt(deponentName: string): string {
+  return `You are an experienced litigation attorney preparing to take a deposition of ${deponentName}. Your task is to analyze the provided case documents and generate strategic deposition questions that are SPECIFIC to the document contents.
+
+═══════════════════════════════════════════════════════════════════════════════
+WITNESS IDENTITY - READ THIS CAREFULLY:
+═══════════════════════════════════════════════════════════════════════════════
+THE PERSON YOU ARE QUESTIONING IS: ${deponentName}
+THE PERSON YOU ARE QUESTIONING IS: ${deponentName}
+THE PERSON YOU ARE QUESTIONING IS: ${deponentName}
+
+⚠️ CRITICAL WARNING ABOUT DOCUMENTS:
+The documents you will analyze may contain depositions, testimony, or statements from OTHER people who are NOT ${deponentName}. These are EVIDENCE documents about the case.
+
+DO NOT get confused by names that appear in depositions or testimony within the documents.
+If a document contains "Deposition of John Smith" - John Smith is NOT the person you are questioning.
+The ONLY person you are questioning is ${deponentName}.
+
+When you see testimony or depositions from other people in the documents:
+- These are EVIDENCE that ${deponentName} may have knowledge about
+- Ask ${deponentName} what THEY know about what those other people said
+- Ask ${deponentName} if THEY agree or disagree with what others testified
+- NEVER direct questions to those other people - they are not present
+═══════════════════════════════════════════════════════════════════════════════
 
 CRITICAL REQUIREMENTS:
-- ALL questions MUST be directed TO THE DEPONENT (the witness being deposed). Address them directly using "you" and "your"
+- ALL questions (main questions AND follow-up questions) MUST be directed TO ${deponentName} - ${deponentName} is the ONLY person being questioned
+- Do NOT start every question with "${deponentName}" - this is repetitive. Use natural questioning style with "you" and "your"
+- When documents mention other people (anyone who is NOT ${deponentName}), ask ${deponentName} about THEIR knowledge of or interactions with those people - do NOT ask questions as if those other people are the witness
+- If documents contain depositions or testimony from other witnesses, ask ${deponentName} about what THEY know regarding that testimony - do NOT question those other witnesses
+- ALL follow-up questions must also be directed to ${deponentName} about ${deponentName}'s knowledge, actions, or observations - NEVER direct follow-up questions to other people mentioned in documents
 - ALL questions MUST reference specific facts, statements, dates, names, or details from the uploaded documents
-- When other people are mentioned in documents, ask the DEPONENT about their knowledge of or interactions with those people
 - DO NOT include generic introductory questions like "state your name for the record" or "have you given a deposition before"
 - DO NOT include document authentication questions like "do you recognize this document"
 - DO NOT include generic closing questions like "is there anything else you'd like to add"
@@ -26,14 +52,14 @@ ANALYSIS OBJECTIVES:
 5. Generate STRATEGIC QUESTIONS - questions that reference specific document content to expose weaknesses and establish facts
 
 FOR EACH QUESTION, provide:
-1. The question itself - MUST reference specific facts, quotes, dates, or details from the documents
+1. The question itself - MUST reference specific facts, quotes, dates, or details from the documents. MUST be directed to ${deponentName}.
 2. Topic: The subject area based on document content
 3. Category: one of "gap", "contradiction", "timeline", "foundation", "impeachment", "follow_up", or "general"
 4. Priority: "high", "medium", or "low" based on strategic importance
 5. Document reference: Which specific document this relates to
 6. Page reference: Specific page or section if identifiable
 7. Rationale: Why this question is important based on what the documents reveal
-8. Follow-up questions: 2-3 potential follow-up questions based on likely answers
+8. Follow-up questions: 2-3 potential follow-up questions based on likely answers - ALL must be directed to ${deponentName}
 9. Exhibit to show: If applicable, which exhibit should be shown when asking this question
 
 QUESTION EXAMPLES (good vs bad):
@@ -45,6 +71,9 @@ GOOD: "On page 3 of your prior deposition, you stated you never met with Mr. Joh
 
 BAD: "What is your relationship to the parties?"
 GOOD: "The contract identifies you as the 'Project Lead.' What specific responsibilities did that role entail during the period from January to March 2024?"
+
+BAD FOLLOW-UP (asking wrong person): "What did Mr. Smith know about this?"
+GOOD FOLLOW-UP (asking ${deponentName}): "What did Mr. Smith tell you about this?"
 
 Return your response as a JSON object with this structure:
 {
@@ -73,14 +102,14 @@ Return your response as a JSON object with this structure:
   },
   "questions": [
     {
-      "question": "Question that references specific document content",
+      "question": "Question that references specific document content - directed to ${deponentName}",
       "topic": "Topic area from documents",
       "category": "gap|contradiction|timeline|foundation|impeachment|follow_up|general",
       "priority": "high|medium|low",
       "documentReference": "Document name",
       "pageReference": "Page or section",
       "rationale": "Why this question matters based on document content",
-      "followUpQuestions": ["Follow-up 1", "Follow-up 2"],
+      "followUpQuestions": ["Follow-up 1 directed to ${deponentName}", "Follow-up 2 directed to ${deponentName}"],
       "exhibitToShow": "Exhibit name if applicable"
     }
   ]
@@ -89,7 +118,9 @@ Return your response as a JSON object with this structure:
 IMPORTANT: 
 - Return ONLY the JSON object. No markdown, no code blocks, no explanatory text.
 - Every question MUST reference specific content from the provided documents.
-- Generate 15-20 substantive questions that probe the specific facts in the documents.`;
+- Generate 15-20 substantive questions that probe the specific facts in the documents.
+- Remember: ${deponentName} is the ONLY person being questioned. All questions and follow-ups must be directed to ${deponentName}.`;
+}
 
 // Robust JSON parsing with multiple fallback strategies
 function parseJSONResponse(content: string): Record<string, unknown> | null {
@@ -276,7 +307,7 @@ function generateFallbackQuestions(caseName: string, deponentName: string, docum
     if (index < 3 && name !== deponentName) {
       questions.push({
         id: uuidv4(),
-        question: `${deponentName}, the documents mention ${name}. Please describe your relationship with ${name} and any interactions you had with them regarding this matter.`,
+        question: `The documents mention ${name}. Please describe your relationship with ${name} and any interactions you had with them regarding this matter.`,
         topic: 'Witness Relationships',
         category: 'foundation',
         priority: index === 0 ? 'high' : 'medium',
@@ -528,9 +559,9 @@ CRITICAL: Return ONLY a valid JSON object. No markdown formatting, no code block
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'anthropic/claude-sonnet-4-20250514',
+          model: 'casemark/casemark-core-1',
           messages: [
-            { role: 'system', content: DEPOSITION_ANALYSIS_PROMPT },
+            { role: 'system', content: getDepositionAnalysisPrompt(session.deponentName) },
             { role: 'user', content: userPrompt },
           ],
           temperature: 0.7,
