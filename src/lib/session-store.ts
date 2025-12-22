@@ -1,13 +1,31 @@
 // In-memory session store for Testimony Prep Tool
-// In production, this would be backed by a database
+// WARNING: In-memory storage is NOT suitable for production on Vercel
+// Sessions will be lost on serverless function cold starts
+// For production, use a database (PostgreSQL, Redis, etc.)
 
 import { v4 as uuidv4 } from 'uuid';
 import { PracticeSession, Document, CrossExamQuestion, PracticeExchange } from './types';
 
-// In-memory storage
+// In-memory storage - sessions will be lost on serverless cold starts
+// TODO: Replace with database storage for production
 const sessions: Map<string, PracticeSession> = new Map();
 
+// Session cleanup - remove sessions older than 24 hours to prevent memory leaks
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function cleanupOldSessions(): void {
+  const now = new Date().getTime();
+  for (const [id, session] of sessions.entries()) {
+    if (now - new Date(session.createdAt).getTime() > SESSION_TTL_MS) {
+      sessions.delete(id);
+    }
+  }
+}
+
 export function createSession(witnessName: string, caseName: string): PracticeSession {
+  // Run cleanup on session creation to prevent memory buildup
+  cleanupOldSessions();
+  
   const session: PracticeSession = {
     id: uuidv4(),
     witnessName,

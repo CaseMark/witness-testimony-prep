@@ -3,6 +3,19 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDepositionSession, addDepositionDocument, updateDepositionDocument, serializeDepositionSession } from '@/lib/deposition-store';
 import { DepositionDocument } from '@/lib/deposition-types';
 
+// File size limit: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// Allowed file types
+const ALLOWED_TYPES = [
+  'text/plain',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+const ALLOWED_EXTENSIONS = ['.txt', '.pdf', '.doc', '.docx'];
+
 interface RouteParams {
   params: Promise<{ sessionId: string }>;
 }
@@ -85,6 +98,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!file) {
       return NextResponse.json(
         { error: 'No file provided' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'File too large. Maximum size is 10MB.' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate file type
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const isAllowedType = ALLOWED_TYPES.includes(file.type) || ALLOWED_EXTENSIONS.includes(fileExtension);
+    
+    if (!isAllowedType) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Allowed types: TXT, PDF, DOC, DOCX' },
         { status: 400 }
       );
     }
