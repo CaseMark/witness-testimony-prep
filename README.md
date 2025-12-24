@@ -2,6 +2,8 @@
 
 A powerful witness preparation tool that helps attorneys prepare witnesses for cross-examination using AI-generated questions and interactive practice sessions.
 
+Live demo: https://witness-testimony-prep.casedev.app
+
 ## Features
 
 - **📄 Document Upload**: Upload case materials (depositions, exhibits, witness statements) that the witness will be questioned about
@@ -130,7 +132,7 @@ testimony-prep/
 
 ## License
 
-MIT
+Apache 2.0
 
 ## Support
 
